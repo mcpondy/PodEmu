@@ -401,6 +401,14 @@ public class OAPMessenger
                     byte msg[] = {0x10, scmd2, protoVersionMajor, protoVersionMinor};
                     oap_write_cmd(msg, msg.length, (byte) 0x00);
                 } break;
+                case 0x13: // Accessory lingos sent
+                {
+                    byte msg[] = new byte[3];
+                    msg[0] = 0x02; // ACK
+                    msg[1] = 0x00; // Response lingo
+                    msg[2] = 0x13; // Response command
+                    oap_write_cmd(msg, msg.length, (byte) 0x00);
+                } break;
                 default:
                 {
                     oap_00_write_return_code(scmd1, IPOD_ERROR_CMD_FAILED);
