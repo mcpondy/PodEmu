@@ -135,6 +135,12 @@ public class OAPMessenger
     public synchronized int oap_receive_byte(byte b)
     {
         oap_print_char(READ, b, line_cmd_pos);
+        if (line_cmd_pos == 2 & b == (byte) 0x00)
+        {
+            is_extended_image = true;
+            line_ext_pos = 2;
+            PodEmuLog.debug(String.format("Extended Image bit detected - MCPPPPPPP"));
+        }
 
         if (line_cmd_pos == 2)
         {
@@ -246,7 +252,7 @@ public class OAPMessenger
             oap_print_podmsg(line_buf, true, (line_cmd_len > 7 && is_extended_image));
 
             checksum = oap_calc_checksum(line_buf, line_cmd_len);
-            if (line_buf[line_cmd_len - 1] != checksum)
+            if (line_buf[line_cmd_len - 1] != checksum & line_buf[2] != (byte) 0x00)
             {
                 PodEmuLog.debug("Line " + line + String.format(": ERROR: checksum error. Received: %02X  Should be: %02X", line_buf[line_cmd_len - 1], checksum));
             } else
@@ -348,10 +354,13 @@ public class OAPMessenger
                 case 0x03: // current mode requested
                 {
                     // writing current mode
-                    byte msg[] = new byte[2];
+                    byte msg[] = new byte[3];
+                    //msg[0] = 0x04;
+                    //msg[1] = (byte) ipod_mode;
                     msg[0] = 0x04;
-                    msg[1] = (byte) ipod_mode;
-                    oap_write_cmd(msg, 2, (byte) 0x00);
+                    msg[1] = 0x01;
+                    //oap_write_cmd(msg, 2, (byte) 0x00);
+                    oap_write_cmd(msg, msg.length, (byte) 0x00);
                 } break;
                 case 0x05: // AiR mode requested
                 {
@@ -918,6 +927,14 @@ public class OAPMessenger
                         break;
                     }
                     enable_polling_mode(params[0] != 0);
+                    byte msg[] = new byte[6];
+                    msg[0] = 0x04; // ACK
+                    msg[1] = 0x00; // Response lingo
+                    msg[2] = 0x01; // Response command
+                    msg[3] = 0x00; // Response command
+                    msg[4] = 0x00; // Response command
+                    msg[5] = 0x26; // Response command
+                    oap_write_cmd(msg, msg.length, (byte) 0x00);
                 }
                 break;
 
@@ -2094,9 +2111,17 @@ public class OAPMessenger
         }
 
         // write to serial success command
-        byte msg[] = {0x00, 0x01, 0x00, 0x00, 0x32};
-        oap_04_write_cmd(msg);
-
+        //orig byte msg[] = {0x00, 0x01, 0x00, 0x00, 0x32};
+        // byte msg[] = {0x00, 0x01, 0x00, 0x00, 0x32};
+        byte msg[] = new byte[6];
+                    msg[0] = 0x04; // ACK
+                    msg[1] = 0x00; // Response lingo
+                    msg[2] = 0x01; // Response command
+                    msg[3] = 0x00; // Response command
+                    msg[4] = 0x00; // Response command
+                    msg[5] = 0x32; // Response command
+        oap_write_cmd(msg, msg.length, (byte) 0x00);
+        //oap_04_write_cmd(msg);
         // send updated bitmap to MainActivity
         oap_send_bitmap();
     }
